@@ -100,9 +100,38 @@ resource "aws_instance" "my_instance" {
   key_name                    = aws_key_pair.my-key.key_name
   associate_public_ip_address = true
 
-  user_data = file("bash.sh")
+  #user_data = file("bash.sh")
+  connection {
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ec2-user"
+    private_key = file("~/.ssh/id_rsa")
+  }
 
+  provisioner "file" {
+    source      = "bash.sh"
+    destination = "/home/ec2-user/bash.sh"
+
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /home/ec2-user/bash.sh",
+      "/home/ec2-user/bash.sh"
+    ]
+    # inline = [
+    #   "mkdir hello"
+    # ]
+
+  }
+
+  provisioner "local-exec" {
+    command = "echo ${aws_instance.my_instance.public_ip} >> public.txt"
+  }
 }
+
+
+
 
 output "public_ip" {
   value = aws_instance.my_instance.public_ip
